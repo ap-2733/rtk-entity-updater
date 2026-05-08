@@ -95,11 +95,51 @@ function canReachEntity(
   );
 }
 
+function findReducerPath(
+  checker: ts.TypeChecker,
+  sourceFile: ts.SourceFile,
+): string {
+  let found: string | undefined;
+
+  function extractFromApiType(type: ts.Type, location: ts.Node): string | undefined {
+    const prop = type.getProperty("reducerPath");
+    if (!prop) return undefined;
+    const propType = checker.getTypeOfSymbolAtLocation(prop, location);
+    return propType.isStringLiteral() ? propType.value : undefined;
+  }
+
+  function visit(node: ts.Node): void {
+    if (found !== undefined) return;
+    if (ts.isCallExpression(node)) {
+      const expr = node.expression;
+      if (
+        (ts.isIdentifier(expr) && expr.text === "createApi") ||
+        (ts.isPropertyAccessExpression(expr) && expr.name.text === "createApi")
+      ) {
+        found = extractFromApiType(checker.getTypeAtLocation(node), node);
+      } else if (
+        ts.isPropertyAccessExpression(expr) &&
+        expr.name.text === "injectEndpoints"
+      ) {
+        found = extractFromApiType(
+          checker.getTypeAtLocation(expr.expression),
+          expr.expression,
+        );
+      }
+    }
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+  return found ?? "api";
+}
+
 async function writeUnifiedFile(
   apiFilePath: string,
   outputFilePath: string,
 ): Promise<void> {
   const { checker, sourceFile } = loadFile(apiFilePath);
+  const detectedReducerPath = findReducerPath(checker, sourceFile);
 
   const queryShapes = new Map<string, ShapeValue>();
   const mutationShapes = new Map<string, ShapeValue>();
@@ -216,19 +256,20 @@ async function writeUnifiedFile(
     `export const entityIdFields = {\n${idFieldLines.join("\n")}\n} as const;\n\n` +
     `export type EntityIdFields = typeof entityIdFields;\n\n` +
     `export const entityQueries: Record<string, string[]> = {\n${entityQueriesLines.join("\n")}\n};\n\n` +
+    `export const reducerPath = "${detectedReducerPath}" as const;\n\n` +
     `${updateOverloads}\n` +
     `export function updateEntity(entityType: string, id: string | number, updater: (entity: Draft<any>) => void) {\n` +
-    `  return updateEntityInternal(entityType, id, updater, "api", entityIdFields, queryMap, entityQueries);\n` +
+    `  return updateEntityInternal(entityType, id, updater, reducerPath, entityIdFields, queryMap, entityQueries);\n` +
     `}\n\n` +
     `${deleteOverloads}\n` +
     `export function deleteEntity(entityType: string, id: string | number) {\n` +
-    `  return deleteEntityInternal(entityType, id, "api", entityIdFields, queryMap, entityQueries);\n` +
+    `  return deleteEntityInternal(entityType, id, reducerPath, entityIdFields, queryMap, entityQueries);\n` +
     `}\n\n` +
     `export function setupMutationListeners(\n` +
     `  listenerMiddleware: ReturnType<typeof createListenerMiddleware>,\n` +
     `  api: Api<any, any, any, any, any>,\n` +
     `) {\n` +
-    `  setupMutationListenersInternal(listenerMiddleware, api, entityIdFields, mutationsMap, api.reducerPath, queryMap, entityQueries,);\n` +
+    `  setupMutationListenersInternal(listenerMiddleware, api, entityIdFields, mutationsMap, reducerPath, queryMap, entityQueries,);\n` +
     `}\n`;
 
   fs.writeFileSync(

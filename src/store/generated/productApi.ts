@@ -273,6 +273,8 @@ export const entityQueries: Record<string, string[]> = {
   ReviewThread: ["getPullRequestsByIdReviews"],
 };
 
+export const reducerPath = "api" as const;
+
 export function updateEntity(
   entityType: "User",
   id: string | number,
@@ -322,7 +324,7 @@ export function updateEntity(
     entityType,
     id,
     updater,
-    "api",
+    reducerPath,
     entityIdFields,
     queryMap,
     entityQueries,
@@ -365,7 +367,7 @@ export function deleteEntity(entityType: string, id: string | number) {
   return deleteEntityInternal(
     entityType,
     id,
-    "api",
+    reducerPath,
     entityIdFields,
     queryMap,
     entityQueries,
@@ -381,7 +383,7 @@ export function setupMutationListeners(
     api,
     entityIdFields,
     mutationsMap,
-    api.reducerPath,
+    reducerPath,
     queryMap,
     entityQueries,
   );
