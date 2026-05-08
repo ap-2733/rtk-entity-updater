@@ -1,4 +1,4 @@
-import { generateTypeSchema } from "./ts-utils/generateTypeSchema";
+import { generateTypeSchema } from "./generateTypeSchema";
 
 async function main() {
   await generateTypeSchema(
