@@ -1,13 +1,13 @@
 import { configureStore } from "@reduxjs/toolkit";
-import { productApi } from "@/src/store/productApi";
+import { exampleApi } from "./exampleApi";
 
 export function createTestStore() {
   return configureStore({
     reducer: {
-      [productApi.reducerPath]: productApi.reducer,
+      [exampleApi.reducerPath]: exampleApi.reducer,
     },
     middleware: (getDefaultMiddleware) => {
-      return getDefaultMiddleware().concat(productApi.middleware);
+      return getDefaultMiddleware().concat(exampleApi.middleware);
     },
   });
 }

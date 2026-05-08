@@ -6,7 +6,7 @@ import { builtinModules } from 'module'
 
 export default defineConfig({
   plugins: [
-    dts({ tsconfigPath: './tsconfig.app.json', entryRoot: 'src', insertTypesEntry: true }),
+    dts({ tsconfigPath: './tsconfig.node.json', include: ['src/index.ts'], entryRoot: 'src' }),
     {
       name: 'copy-assets',
       closeBundle: () => cp('src/assets', 'dist/assets', { recursive: true }),

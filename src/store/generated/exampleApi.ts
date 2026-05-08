@@ -8,7 +8,7 @@ import type {
   PullRequest,
   Commit,
   ReviewThread,
-} from "../productApi";
+} from "../../../test/exampleApi";
 import { type Draft } from "immer";
 import { createListenerMiddleware } from "@reduxjs/toolkit";
 import { type Api } from "@reduxjs/toolkit/query";

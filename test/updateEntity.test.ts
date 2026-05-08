@@ -1,9 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { RootState } from "@/src/store/store";
+import type { RootState } from "@/src/store/store";
 import { user1, user2, user3 } from "./mockData";
-import { updateEntity } from "@/src/store/generated/productApi";
-
-// import { updateEntity } from "@/src/scripts/content";
+import { updateEntity } from "@/src/store/generated/exampleApi";
 
 beforeEach(() => {
   (global as any).requestIdleCallback = (

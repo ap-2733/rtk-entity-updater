@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { configureStore, createListenerMiddleware } from "@reduxjs/toolkit";
-import { productApi } from "../src/store/productApi";
+import { exampleApi } from "./exampleApi";
 import { user1, user3, repo1, issue1, pr1 } from "./mockData";
 import { wrapApiReducer } from "@/src/store/generated/utils";
-import { setupMutationListeners } from "@/src/store/generated/productApi";
+import { setupMutationListeners } from "@/src/store/generated/exampleApi";
 
 beforeEach(() => {
   (global as any).requestIdleCallback = (
@@ -16,15 +16,15 @@ beforeEach(() => {
   };
 });
 
-// Omits productApi.middleware to avoid fetch requests in tests; the reducer
+// Omits exampleApi.middleware to avoid fetch requests in tests; the reducer
 // and listener middleware are sufficient to verify cache updates.
 function makeStore(
   queries: Record<string, { endpointName: string; data: unknown }> = {},
 ) {
   const listenerMiddleware = createListenerMiddleware();
-  setupMutationListeners(listenerMiddleware, productApi);
+  setupMutationListeners(listenerMiddleware, exampleApi);
   return configureStore({
-    reducer: { api: wrapApiReducer(productApi.reducer) } as any,
+    reducer: { api: wrapApiReducer(exampleApi.reducer) } as any,
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware({ serializableCheck: false }).concat(
         listenerMiddleware.middleware,
@@ -56,7 +56,7 @@ function makeStore(
           refetchOnReconnect: false,
           refetchOnMountOrArgChange: false,
           keepUnusedDataFor: 60,
-          reducerPath: productApi.reducerPath,
+          reducerPath: exampleApi.reducerPath,
         },
       },
     } as any,
@@ -78,7 +78,7 @@ async function dispatchMutationFulfilled(
   payload: unknown,
 ) {
   store.dispatch({
-    type: `${productApi.reducerPath}/executeMutation/fulfilled`,
+    type: `${exampleApi.reducerPath}/executeMutation/fulfilled`,
     payload,
     meta: {
       requestId: "test",

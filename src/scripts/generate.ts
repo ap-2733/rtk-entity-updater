@@ -2,8 +2,8 @@ import { generateTypeSchema } from "./generateTypeSchema";
 
 async function main() {
   await generateTypeSchema(
-    "./src/store/productApi.ts",
-    `./src/store/generated/productApi.ts`,
+    "./src/store/exampleApi.ts",
+    `./src/store/generated/exampleApi.ts`,
   );
 }
 

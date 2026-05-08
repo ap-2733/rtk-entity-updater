@@ -1,4 +1,4 @@
-import { emptySplitApi as api } from "./emptyApi";
+import { emptySplitApi as api } from "../src/store/emptyApi";
 const injectedRtkApi = api.injectEndpoints({
   endpoints: (build) => ({
     getUsers: build.query<GetUsersApiResponse, GetUsersApiArg>({
@@ -278,7 +278,7 @@ const injectedRtkApi = api.injectEndpoints({
   }),
   overrideExisting: false,
 });
-export { injectedRtkApi as productApi };
+export { injectedRtkApi as exampleApi };
 export type GetUsersApiResponse = /** status 200 List of users */ User[];
 export type GetUsersApiArg = {
   skip?: number;

@@ -18,7 +18,7 @@ import {
   entityIdFields,
   entityQueries,
   queryMap,
-} from "@/src/store/generated/productApi";
+} from "@/src/store/generated/exampleApi";
 
 beforeEach(() => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
