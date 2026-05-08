@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { RootState } from "../src/store/store";
 import { user1, user2, user3, repo1, repo2 } from "./mockData";
-import { deleteEntity } from "@/src/store/generated/exampleApi";
+import { deleteEntity } from "@/test/generated/exampleApi";
 
 beforeEach(() => {
   (global as any).requestIdleCallback = (
@@ -18,7 +17,7 @@ function makeMockStore(
   queries: Record<string, { endpointName: string; data: unknown }>,
 ) {
   const dispatch = jest.fn();
-  const getState = () => ({ api: { queries } }) as unknown as RootState;
+  const getState = () => ({ api: { queries } });
   return { dispatch, getState };
 }
 

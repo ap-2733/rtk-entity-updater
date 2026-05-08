@@ -8,7 +8,7 @@ The generator reads your RTK Query API file, walks the TypeScript types to disco
 
 **At build time** you run the generator once (or whenever the API changes). It outputs two files into your project:
 
-- `generated/productApi.ts` — typed `updateEntity`, `deleteEntity`, and `setupMutationListeners` functions bound to your specific entities and query shapes
+- `generated/exampleApi.ts` — typed `updateEntity`, `deleteEntity`, and `setupMutationListeners` functions bound to your specific entities and query shapes; also exports `reducerPath` detected from your API definition
 - `generated/utils.ts` — the runtime traversal engine (copied verbatim; not bundled into the library itself)
 
 **At runtime** `updateEntity` and `deleteEntity` dispatch Redux thunks that traverse the RTK Query cache using the pre-computed shape maps and patch every matching occurrence via Immer. `setupMutationListeners` wires up RTK Query listener middleware to do this automatically after PATCH/PUT mutations complete.
@@ -19,7 +19,7 @@ The generator reads your RTK Query API file, walks the TypeScript types to disco
 npm install --save-dev rtk-entity-updater
 ```
 
-Peer dependencies: `@reduxjs/toolkit`, `immer`, `typescript`.
+Peer dependencies: `@reduxjs/toolkit`, `immer`, `typescript`, `prettier`.
 
 ## Usage
 
@@ -30,7 +30,7 @@ Call `generate` from a script (e.g. `scripts/generateApi.ts`) and point it at yo
 ```ts
 import { generate } from 'rtk-entity-updater';
 
-await generate('./src/store/productApi.ts', './src/store/generated/productApi.ts');
+await generate('./src/store/exampleApi.ts', './src/store/generated/exampleApi.ts');
 ```
 
 Add it as an npm script:
@@ -53,14 +53,14 @@ In your store setup, wrap the RTK Query reducer so it can handle the cache-patch
 
 ```ts
 import { configureStore } from '@reduxjs/toolkit';
-import { productApi } from './productApi';
+import { exampleApi } from './exampleApi';
 import { wrapApiReducer } from './generated/utils';
 
 export const store = configureStore({
   reducer: {
-    [productApi.reducerPath]: wrapApiReducer(productApi.reducer),
+    [exampleApi.reducerPath]: wrapApiReducer(exampleApi.reducer),
   },
-  middleware: (getDefault) => getDefault().concat(productApi.middleware),
+  middleware: (getDefault) => getDefault().concat(exampleApi.middleware),
 });
 ```
 
@@ -70,17 +70,19 @@ If you want PATCH/PUT mutations to automatically sync the cache on success, add 
 
 ```ts
 import { configureStore, createListenerMiddleware } from '@reduxjs/toolkit';
-import { setupMutationListeners } from './generated/productApi';
+import { exampleApi } from './exampleApi';
+import { setupMutationListeners } from './generated/exampleApi';
+import { wrapApiReducer } from './generated/utils';
 
 const listenerMiddleware = createListenerMiddleware();
-setupMutationListeners(listenerMiddleware, productApi);
+setupMutationListeners(listenerMiddleware, exampleApi);
 
 export const store = configureStore({
   reducer: {
-    [productApi.reducerPath]: wrapApiReducer(productApi.reducer),
+    [exampleApi.reducerPath]: wrapApiReducer(exampleApi.reducer),
   },
   middleware: (getDefault) =>
-    getDefault().concat(productApi.middleware, listenerMiddleware.middleware),
+    getDefault().concat(exampleApi.middleware, listenerMiddleware.middleware),
 });
 ```
 
@@ -89,9 +91,9 @@ export const store = configureStore({
 Dispatch the generated thunks anywhere you have access to the Redux store:
 
 ```ts
-import { updateEntity, deleteEntity } from './generated/productApi';
+import { updateEntity, deleteEntity } from './generated/exampleApi';
 
-// Updater is typed as Draft<User> — no casting needed
+// updater is typed as (entity: Draft<User>) => void — no casting needed
 store.dispatch(updateEntity('User', userId, (user) => {
   user.displayName = 'New Name';
 }));
@@ -110,6 +112,21 @@ The generator identifies an entity type by these criteria:
 - It has a field whose normalized name (lowercased, non-alpha stripped) is `id` or `{TypeName}id`
 
 Only PATCH and PUT mutations are included in the auto-sync map. POST mutations create new entities and don't update existing cache entries.
+
+## Generated file shape
+
+```ts
+// Typed overloads — entityType and updater callback are strictly typed per entity
+export function updateEntity(entityType: 'User', id: string | number, updater: (entity: Draft<User>) => void): ...;
+export function updateEntity(entityType: 'Post', id: string | number, updater: (entity: Draft<Post>) => void): ...;
+// ...
+
+export function deleteEntity(entityType: 'User', id: string | number): ...;
+// ...
+
+// reducerPath detected from your createApi / injectEndpoints call
+export const reducerPath = 'api' as const;
+```
 
 ## Requirements
 

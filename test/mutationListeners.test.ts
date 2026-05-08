@@ -2,8 +2,8 @@
 import { configureStore, createListenerMiddleware } from "@reduxjs/toolkit";
 import { exampleApi } from "./exampleApi";
 import { user1, user3, repo1, issue1, pr1 } from "./mockData";
-import { wrapApiReducer } from "@/src/store/generated/utils";
-import { setupMutationListeners } from "@/src/store/generated/exampleApi";
+import { wrapApiReducer } from "@/test/generated/utils";
+import { setupMutationListeners } from "@/test/generated/exampleApi";
 
 beforeEach(() => {
   (global as any).requestIdleCallback = (

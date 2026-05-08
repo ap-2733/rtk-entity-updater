@@ -1,4 +1,4 @@
-import { emptySplitApi as api } from "../src/store/emptyApi";
+import { emptySplitApi as api } from "./emptyApi.ts";
 const injectedRtkApi = api.injectEndpoints({
   endpoints: (build) => ({
     getUsers: build.query<GetUsersApiResponse, GetUsersApiArg>({

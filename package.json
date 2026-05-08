@@ -21,9 +21,6 @@
     "build": "tsc -b && vite build",
     "lint": "eslint . && npx tsc --noEmit",
     "preview": "vite preview",
-    "generate": "tsx src/scripts/generate.ts",
-    "serve": "tsx src/server/server.ts",
-    "fake": "tsx src/server/generateFakeData.ts",
     "test": "jest"
   },
   "peerDependencies": {

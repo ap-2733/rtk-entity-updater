@@ -8,7 +8,7 @@ import type {
   PullRequest,
   Commit,
   ReviewThread,
-} from "../../../test/exampleApi";
+} from "../exampleApi.ts";
 import { type Draft } from "immer";
 import { createListenerMiddleware } from "@reduxjs/toolkit";
 import { type Api } from "@reduxjs/toolkit/query";
@@ -16,7 +16,7 @@ import {
   updateEntityInternal,
   deleteEntityInternal,
   setupMutationListenersInternal,
-} from "./utils";
+} from "./utils.ts";
 
 export const queryMap = {
   getUsers: "User[]",

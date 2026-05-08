@@ -2,7 +2,6 @@ import ts from "typescript";
 import * as fs from "fs";
 import * as path from "path";
 import { fileURLToPath } from "url";
-import * as prettier from "prettier";
 import { loadFile } from "./loadFile";
 import {
   collectEntityTypes,
@@ -272,10 +271,7 @@ async function writeUnifiedFile(
     `  setupMutationListenersInternal(listenerMiddleware, api, entityIdFields, mutationsMap, reducerPath, queryMap, entityQueries,);\n` +
     `}\n`;
 
-  fs.writeFileSync(
-    outputFilePath,
-    await prettier.format(content, { filepath: outputFilePath }),
-  );
+  fs.writeFileSync(outputFilePath, content);
 
   const outputDir = path.dirname(path.resolve(outputFilePath));
   const utilsSrc = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../assets/utils.ts");

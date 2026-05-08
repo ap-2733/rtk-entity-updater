@@ -13,12 +13,12 @@ import {
   reviewThread2,
 } from "./mockData";
 
-import { findEntityGenerator, promisifyGenerator } from "@/src/store/generated/utils";
+import { findEntityGenerator, promisifyGenerator } from "@/test/generated/utils";
 import {
   entityIdFields,
   entityQueries,
   queryMap,
-} from "@/src/store/generated/exampleApi";
+} from "@/test/generated/exampleApi";
 
 beforeEach(() => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
