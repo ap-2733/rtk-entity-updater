@@ -19,7 +19,7 @@ The generator reads your RTK Query API file, walks the TypeScript types to disco
 npm install --save-dev rtk-entity-updater
 ```
 
-Peer dependencies: `@reduxjs/toolkit`, `immer`, `typescript`, `prettier`.
+Peer dependencies: `@reduxjs/toolkit`, `immer`, `typescript`.
 
 ## Usage
 
@@ -133,4 +133,3 @@ export const reducerPath = 'api' as const;
 - TypeScript 5+
 - `@reduxjs/toolkit` 2+
 - `immer` 9+
-- `prettier` must be resolvable at generate time (used to format the output file)
