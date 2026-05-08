@@ -278,7 +278,7 @@ async function writeUnifiedFile(
   );
 
   const outputDir = path.dirname(path.resolve(outputFilePath));
-  const utilsSrc = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../assets/utils.ts");
+  const utilsSrc = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "./assets/utils.ts");
   fs.copyFileSync(utilsSrc, path.join(outputDir, "utils.ts"));
 }
 

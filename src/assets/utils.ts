@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Draft, produce } from "immer";
+import { type Draft, produce } from "immer";
 import { createListenerMiddleware } from "@reduxjs/toolkit";
-import { Api } from "@reduxjs/toolkit/query";
+import { type Api } from "@reduxjs/toolkit/query";
 
 export function get(root: unknown, path: (string | number)[]): unknown {
   let node: any = root;
