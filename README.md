@@ -1,73 +1,119 @@
-# React + TypeScript + Vite
+# rtk-entity-updater
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A dev-time code generator that keeps RTK Query cache in sync when entities are updated or deleted outside of a query re-fetch.
 
-Currently, two official plugins are available:
+The generator reads your RTK Query API file, walks the TypeScript types to discover every entity and where it can appear in query responses, and emits a typed helper file. At runtime those helpers find every copy of an entity across all active cache entries and patch or remove it in one dispatch.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## How it works
 
-## React Compiler
+**At build time** you run the generator once (or whenever the API changes). It outputs two files into your project:
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- `generated/productApi.ts` — typed `updateEntity`, `deleteEntity`, and `setupMutationListeners` functions bound to your specific entities and query shapes
+- `generated/utils.ts` — the runtime traversal engine (copied verbatim; not bundled into the library itself)
 
-## Expanding the ESLint configuration
+**At runtime** `updateEntity` and `deleteEntity` dispatch Redux thunks that traverse the RTK Query cache using the pre-computed shape maps and patch every matching occurrence via Immer. `setupMutationListeners` wires up RTK Query listener middleware to do this automatically after PATCH/PUT mutations complete.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Installation
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install --save-dev rtk-entity-updater
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Peer dependencies: `@reduxjs/toolkit`, `immer`, `typescript`.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Usage
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### 1. Generate the helper file
+
+Call `generate` from a script (e.g. `scripts/generateApi.ts`) and point it at your RTK Query API file:
+
+```ts
+import { generate } from 'rtk-entity-updater';
+
+await generate('./src/store/productApi.ts', './src/store/generated/productApi.ts');
 ```
+
+Add it as an npm script:
+
+```json
+"scripts": {
+  "generate": "tsx scripts/generateApi.ts"
+}
+```
+
+Run it whenever your API types change:
+
+```bash
+npm run generate
+```
+
+### 2. Wrap the API reducer
+
+In your store setup, wrap the RTK Query reducer so it can handle the cache-patch actions:
+
+```ts
+import { configureStore } from '@reduxjs/toolkit';
+import { productApi } from './productApi';
+import { wrapApiReducer } from './generated/utils';
+
+export const store = configureStore({
+  reducer: {
+    [productApi.reducerPath]: wrapApiReducer(productApi.reducer),
+  },
+  middleware: (getDefault) => getDefault().concat(productApi.middleware),
+});
+```
+
+### 3. Set up mutation listeners (optional)
+
+If you want PATCH/PUT mutations to automatically sync the cache on success, add listener middleware and call `setupMutationListeners`:
+
+```ts
+import { configureStore, createListenerMiddleware } from '@reduxjs/toolkit';
+import { setupMutationListeners } from './generated/productApi';
+
+const listenerMiddleware = createListenerMiddleware();
+setupMutationListeners(listenerMiddleware, productApi);
+
+export const store = configureStore({
+  reducer: {
+    [productApi.reducerPath]: wrapApiReducer(productApi.reducer),
+  },
+  middleware: (getDefault) =>
+    getDefault().concat(productApi.middleware, listenerMiddleware.middleware),
+});
+```
+
+### 4. Update and delete entities
+
+Dispatch the generated thunks anywhere you have access to the Redux store:
+
+```ts
+import { updateEntity, deleteEntity } from './generated/productApi';
+
+// Updater is typed as Draft<User> — no casting needed
+store.dispatch(updateEntity('User', userId, (user) => {
+  user.displayName = 'New Name';
+}));
+
+store.dispatch(deleteEntity('Comment', commentId));
+```
+
+Both functions find every copy of the entity across all active query cache entries and apply the change atomically, so list queries, detail queries, and nested occurrences (e.g. a `User` embedded in a `Repository.owner` field) all stay consistent.
+
+## Entity detection
+
+The generator identifies an entity type by these criteria:
+
+- It is a named TypeScript `type` alias (not an inline object or interface)
+- It resolves to a non-array object with at least one property
+- It has a field whose normalized name (lowercased, non-alpha stripped) is `id` or `{TypeName}id`
+
+Only PATCH and PUT mutations are included in the auto-sync map. POST mutations create new entities and don't update existing cache entries.
+
+## Requirements
+
+- TypeScript 5+
+- `@reduxjs/toolkit` 2+
+- `immer` 9+
+- `prettier` must be resolvable at generate time (used to format the output file)
