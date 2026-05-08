@@ -278,8 +278,15 @@ async function writeUnifiedFile(
   );
 
   const outputDir = path.dirname(path.resolve(outputFilePath));
-  const utilsSrc = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "./assets/utils.ts");
-  fs.copyFileSync(utilsSrc, path.join(outputDir, "utils.ts"));
+  const utilsSrc = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../assets/utils.ts");
+  const utilsDist = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "./assets/utils.ts");
+  if(fs.existsSync(utilsSrc)){
+    fs.copyFileSync(utilsSrc, path.join(outputDir, "utils.ts"));
+  }
+  if(fs.existsSync(utilsDist)) {
+    fs.copyFileSync(utilsDist, path.join(outputDir, "utils.ts"));
+  }
+
 }
 
 export async function generateTypeSchema(
