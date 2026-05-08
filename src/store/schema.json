@@ -1,0 +1,1022 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Developer Platform API",
+    "version": "1.0.0",
+    "description": "API for repositories, issues, pull requests, commits, teams and code review"
+  },
+  "servers": [{ "url": "/api" }],
+  "paths": {
+    "/users": {
+      "get": {
+        "operationId": "getUsers",
+        "summary": "List users with pagination",
+        "parameters": [
+          { "in": "query", "name": "skip", "schema": { "type": "integer" } },
+          { "in": "query", "name": "limit", "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of users",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/User" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/search": {
+      "get": {
+        "operationId": "getUsersSearch",
+        "summary": "Search users by username or display name",
+        "parameters": [
+          { "in": "query", "name": "q", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Matching users",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/User" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/{id}": {
+      "get": {
+        "operationId": "getUsersById",
+        "summary": "Get user profile with followers and following",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "User with social graph",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user": { "$ref": "#/components/schemas/User" },
+                    "followers": { "type": "array", "items": { "$ref": "#/components/schemas/User" } },
+                    "following": { "type": "array", "items": { "$ref": "#/components/schemas/User" } }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "patchUsersById",
+        "summary": "Partially update a user profile",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": { "type": "string" },
+                  "email": { "type": "string", "format": "email" },
+                  "displayName": { "type": "string" },
+                  "bio": { "type": "string" },
+                  "avatar": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated user",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/User" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/{id}/repositories": {
+      "get": {
+        "operationId": "getUsersByIdRepositories",
+        "summary": "List repositories owned or contributed to by a user",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "User repositories",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Repository" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/{id}/teams": {
+      "get": {
+        "operationId": "getUsersByIdTeams",
+        "summary": "List teams a user belongs to",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "User teams",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Team" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/{id}/issues": {
+      "get": {
+        "operationId": "getUsersByIdIssues",
+        "summary": "List issues authored or assigned to a user",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } },
+          {
+            "in": "query",
+            "name": "state",
+            "schema": { "type": "string", "enum": ["open", "closed", "all"] }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User issues",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Issue" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/{id}/pullRequests": {
+      "get": {
+        "operationId": "getUsersByIdPullRequests",
+        "summary": "List pull requests authored or reviewed by a user",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } },
+          {
+            "in": "query",
+            "name": "state",
+            "schema": { "type": "string", "enum": ["open", "closed", "merged", "all"] }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User pull requests",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/PullRequest" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/repositories": {
+      "get": {
+        "operationId": "getRepositories",
+        "summary": "List public repositories",
+        "parameters": [
+          { "in": "query", "name": "skip", "schema": { "type": "integer" } },
+          { "in": "query", "name": "limit", "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of repositories",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Repository" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/repositories/search": {
+      "get": {
+        "operationId": "getRepositoriesSearch",
+        "summary": "Search repositories by name, description, or topic",
+        "parameters": [
+          { "in": "query", "name": "q", "required": true, "schema": { "type": "string" } },
+          { "in": "query", "name": "language", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Matching repositories",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Repository" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/repositories/{id}": {
+      "get": {
+        "operationId": "getRepositoriesById",
+        "summary": "Get repository with collaborators and forks",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Repository with collaborators and forks",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "repository": { "$ref": "#/components/schemas/Repository" },
+                    "collaborators": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/User" }
+                    },
+                    "forks": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Repository" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "patchRepositoriesById",
+        "summary": "Partially update a repository",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "description": { "type": "string" },
+                  "isPrivate": { "type": "boolean" },
+                  "language": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated repository",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Repository" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/repositories/{id}/stargazers": {
+      "get": {
+        "operationId": "getRepositoriesByIdStargazers",
+        "summary": "List users who starred a repository",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Stargazers",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/User" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/repositories/{id}/issues": {
+      "get": {
+        "operationId": "getRepositoriesByIdIssues",
+        "summary": "List issues in a repository",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } },
+          {
+            "in": "query",
+            "name": "state",
+            "schema": { "type": "string", "enum": ["open", "closed", "all"] }
+          },
+          { "in": "query", "name": "label", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Repository issues",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Issue" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/repositories/{id}/pullRequests": {
+      "get": {
+        "operationId": "getRepositoriesByIdPullRequests",
+        "summary": "List pull requests in a repository",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } },
+          {
+            "in": "query",
+            "name": "state",
+            "schema": { "type": "string", "enum": ["open", "closed", "merged", "all"] }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Repository pull requests",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/PullRequest" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/repositories/{id}/commits": {
+      "get": {
+        "operationId": "getRepositoriesByIdCommits",
+        "summary": "List commits in a repository",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } },
+          { "in": "query", "name": "branch", "schema": { "type": "string" } },
+          { "in": "query", "name": "author", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Repository commits",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Commit" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/issues": {
+      "get": {
+        "operationId": "getIssues",
+        "summary": "List open issues across all repositories",
+        "parameters": [
+          { "in": "query", "name": "skip", "schema": { "type": "integer" } },
+          { "in": "query", "name": "limit", "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of issues",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Issue" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/issues/search": {
+      "get": {
+        "operationId": "getIssuesSearch",
+        "summary": "Search issues by title or body",
+        "parameters": [
+          { "in": "query", "name": "q", "required": true, "schema": { "type": "string" } },
+          { "in": "query", "name": "state", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Matching issues",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Issue" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/issues/{id}": {
+      "get": {
+        "operationId": "getIssuesById",
+        "summary": "Get issue with comments and linked pull requests",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Issue with comments and linked PRs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "issue": { "$ref": "#/components/schemas/Issue" },
+                    "comments": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Comment" }
+                    },
+                    "linkedPullRequests": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/PullRequest" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "putIssuesById",
+        "summary": "Replace an issue",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Issue" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Replaced issue",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Issue" }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "patchIssuesById",
+        "summary": "Partially update an issue",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": { "type": "string" },
+                  "body": { "type": "string" },
+                  "state": { "type": "string", "enum": ["open", "closed"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated issue",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Issue" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pullRequests": {
+      "get": {
+        "operationId": "getPullRequests",
+        "summary": "List open pull requests across all repositories",
+        "parameters": [
+          { "in": "query", "name": "skip", "schema": { "type": "integer" } },
+          { "in": "query", "name": "limit", "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of pull requests",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/PullRequest" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pullRequests/{id}": {
+      "get": {
+        "operationId": "getPullRequestsById",
+        "summary": "Get pull request with commits and comments",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pull request with commits and comments",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "pullRequest": { "$ref": "#/components/schemas/PullRequest" },
+                    "commits": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Commit" }
+                    },
+                    "comments": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Comment" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "putPullRequestsById",
+        "summary": "Replace a pull request",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PullRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Replaced pull request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PullRequest" }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "patchPullRequestsById",
+        "summary": "Partially update a pull request",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": { "type": "string" },
+                  "body": { "type": "string" },
+                  "state": { "type": "string", "enum": ["open", "closed", "merged"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated pull request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PullRequest" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pullRequests/{id}/reviews": {
+      "get": {
+        "operationId": "getPullRequestsByIdReviews",
+        "summary": "Get code review threads for a pull request",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Review threads",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/ReviewThread" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/teams": {
+      "get": {
+        "operationId": "getTeams",
+        "summary": "List all teams",
+        "responses": {
+          "200": {
+            "description": "List of teams",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Team" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/teams/{id}": {
+      "get": {
+        "operationId": "getTeamsById",
+        "summary": "Get team with members, sub-teams, and repositories",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Team with members, sub-teams, and repositories",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "team": { "$ref": "#/components/schemas/Team" },
+                    "members": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/User" }
+                    },
+                    "subTeams": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Team" }
+                    },
+                    "repositories": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Repository" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/commits/{id}": {
+      "get": {
+        "operationId": "getCommitsById",
+        "summary": "Get commit with co-authors and associated pull request",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Commit with co-authors and pull request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "commit": { "$ref": "#/components/schemas/Commit" },
+                    "coAuthors": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/User" }
+                    },
+                    "pullRequest": { "$ref": "#/components/schemas/PullRequest" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/comments/{id}": {
+      "get": {
+        "operationId": "getCommentsById",
+        "summary": "Get a comment with its reply thread",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Comment with replies",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "comment": { "$ref": "#/components/schemas/Comment" },
+                    "replies": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Comment" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/issues/{id}/comments": {
+      "post": {
+        "operationId": "postIssuesByIdComments",
+        "summary": "Post a comment on an issue",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["body"],
+                "properties": {
+                  "body": { "type": "string" },
+                  "parentCommentId": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Comment created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Comment" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pullRequests/{id}/comments": {
+      "post": {
+        "operationId": "postPullRequestsByIdComments",
+        "summary": "Post a comment on a pull request",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["body"],
+                "properties": {
+                  "body": { "type": "string" },
+                  "parentCommentId": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Comment created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Comment" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "User": {
+        "type": "object",
+        "required": ["_id", "username", "email"],
+        "properties": {
+          "_id": { "type": "string" },
+          "username": { "type": "string" },
+          "email": { "type": "string", "format": "email" },
+          "displayName": { "type": "string" },
+          "avatar": { "type": "string" },
+          "bio": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "followers": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/User" }
+          },
+          "following": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/User" }
+          },
+          "pinnedRepositories": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Repository" }
+          },
+          "starredRepositories": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Repository" }
+          },
+          "teams": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Team" }
+          }
+        }
+      },
+      "Repository": {
+        "type": "object",
+        "required": ["_id", "name"],
+        "properties": {
+          "_id": { "type": "string" },
+          "name": { "type": "string" },
+          "fullName": { "type": "string" },
+          "description": { "type": "string" },
+          "language": { "type": "string" },
+          "stars": { "type": "integer" },
+          "isPrivate": { "type": "boolean" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "owner": { "$ref": "#/components/schemas/User" },
+          "collaborators": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/User" }
+          },
+          "stargazers": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/User" }
+          },
+          "forks": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Repository" }
+          },
+          "parentFork": { "$ref": "#/components/schemas/Repository" }
+        }
+      },
+      "Issue": {
+        "type": "object",
+        "required": ["_id", "title"],
+        "properties": {
+          "_id": { "type": "string" },
+          "title": { "type": "string" },
+          "body": { "type": "string" },
+          "state": { "type": "string", "enum": ["open", "closed"] },
+          "number": { "type": "integer" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "closedAt": { "type": "string", "format": "date-time" },
+          "author": { "$ref": "#/components/schemas/User" },
+          "assignees": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/User" }
+          },
+          "comments": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Comment" }
+          },
+          "linkedPullRequests": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/PullRequest" }
+          },
+          "repository": { "$ref": "#/components/schemas/Repository" }
+        }
+      },
+      "PullRequest": {
+        "type": "object",
+        "required": ["_id", "title"],
+        "properties": {
+          "_id": { "type": "string" },
+          "title": { "type": "string" },
+          "body": { "type": "string" },
+          "state": { "type": "string", "enum": ["open", "closed", "merged"] },
+          "number": { "type": "integer" },
+          "sourceBranch": { "type": "string" },
+          "targetBranch": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "mergedAt": { "type": "string", "format": "date-time" },
+          "author": { "$ref": "#/components/schemas/User" },
+          "reviewers": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/User" }
+          },
+          "commits": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Commit" }
+          },
+          "comments": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Comment" }
+          },
+          "resolvedIssues": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Issue" }
+          },
+          "repository": { "$ref": "#/components/schemas/Repository" }
+        }
+      },
+      "Commit": {
+        "type": "object",
+        "required": ["_id", "hash", "message"],
+        "properties": {
+          "_id": { "type": "string" },
+          "hash": { "type": "string" },
+          "message": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "author": { "$ref": "#/components/schemas/User" },
+          "coAuthors": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/User" }
+          },
+          "pullRequest": { "$ref": "#/components/schemas/PullRequest" }
+        }
+      },
+      "Comment": {
+        "type": "object",
+        "required": ["_id", "body"],
+        "properties": {
+          "_id": { "type": "string" },
+          "body": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" },
+          "author": { "$ref": "#/components/schemas/User" },
+          "replies": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Comment" }
+          },
+          "parentComment": { "$ref": "#/components/schemas/Comment" }
+        }
+      },
+      "ReviewThread": {
+        "type": "object",
+        "required": ["_id"],
+        "properties": {
+          "_id": { "type": "string" },
+          "filePath": { "type": "string" },
+          "line": { "type": "integer" },
+          "isResolved": { "type": "boolean" },
+          "resolvedBy": { "$ref": "#/components/schemas/User" },
+          "comments": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Comment" }
+          },
+          "pullRequest": { "$ref": "#/components/schemas/PullRequest" }
+        }
+      },
+      "Team": {
+        "type": "object",
+        "required": ["_id", "name"],
+        "properties": {
+          "_id": { "type": "string" },
+          "name": { "type": "string" },
+          "slug": { "type": "string" },
+          "description": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "members": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/User" }
+          },
+          "repositories": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Repository" }
+          },
+          "subTeams": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Team" }
+          },
+          "parentTeam": { "$ref": "#/components/schemas/Team" }
+        }
+      }
+    }
+  },
+  "tags": []
+}

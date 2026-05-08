@@ -1,0 +1,1 @@
+export { generateTypeSchema as generate } from './scripts/ts-utils/generateTypeSchema';
