@@ -1,6 +1,7 @@
 import ts from "typescript";
 import * as fs from "fs";
 import * as path from "path";
+import { fileURLToPath } from "url";
 import * as prettier from "prettier";
 import { loadFile } from "./loadFile";
 import {
@@ -182,11 +183,31 @@ async function writeUnifiedFile(
     entityQueriesLines.push(`  ${entityName}: [${list}],`);
   }
 
+  const entityNames = [...allEntities.keys()];
+  const genOutputDir = path.dirname(path.resolve(outputFilePath));
+  let relImportPath = path.relative(genOutputDir, path.resolve(apiFilePath)).replace(/\.ts$/, "");
+  if (!relImportPath.startsWith(".")) relImportPath = "./" + relImportPath;
+
+  const updateOverloads = entityNames
+    .map(
+      (name) =>
+        `export function updateEntity(entityType: "${name}", id: string | number, updater: (entity: Draft<${name}>) => void): ReturnType<typeof updateEntityInternal>;`,
+    )
+    .join("\n");
+
+  const deleteOverloads = entityNames
+    .map(
+      (name) =>
+        `export function deleteEntity(entityType: "${name}", id: string | number): ReturnType<typeof deleteEntityInternal>;`,
+    )
+    .join("\n");
+
   const content =
     `/* eslint-disable @typescript-eslint/no-explicit-any */\n` +
-    `import { Draft } from "immer";\n` +
+    `import type { ${entityNames.join(", ")} } from "${relImportPath}";\n` +
+    `import { type Draft } from "immer";\n` +
     `import { createListenerMiddleware } from "@reduxjs/toolkit";\n` +
-    `import { Api } from "@reduxjs/toolkit/query";\n` +
+    `import { type Api } from "@reduxjs/toolkit/query";\n` +
     `import { updateEntityInternal, deleteEntityInternal, setupMutationListenersInternal } from "./utils";\n\n` +
     `export const queryMap = {\n${queryMapLines.join("\n")}\n} as const;\n\n` +
     `export type QueryMap = typeof queryMap;\n\n` +
@@ -195,13 +216,11 @@ async function writeUnifiedFile(
     `export const entityIdFields = {\n${idFieldLines.join("\n")}\n} as const;\n\n` +
     `export type EntityIdFields = typeof entityIdFields;\n\n` +
     `export const entityQueries: Record<string, string[]> = {\n${entityQueriesLines.join("\n")}\n};\n\n` +
-    `export function updateEntity(\n` +
-    `  entityType: string,\n` +
-    `  id: string | number,\n` +
-    `  updater: (entity: Draft<any>) => void,\n` +
-    `) {\n` +
+    `${updateOverloads}\n` +
+    `export function updateEntity(entityType: string, id: string | number, updater: (entity: Draft<any>) => void) {\n` +
     `  return updateEntityInternal(entityType, id, updater, "api", entityIdFields, queryMap, entityQueries);\n` +
     `}\n\n` +
+    `${deleteOverloads}\n` +
     `export function deleteEntity(entityType: string, id: string | number) {\n` +
     `  return deleteEntityInternal(entityType, id, "api", entityIdFields, queryMap, entityQueries);\n` +
     `}\n\n` +
@@ -218,7 +237,7 @@ async function writeUnifiedFile(
   );
 
   const outputDir = path.dirname(path.resolve(outputFilePath));
-  const utilsSrc = path.resolve(__dirname, "../assets/utils.ts");
+  const utilsSrc = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../assets/utils.ts");
   fs.copyFileSync(utilsSrc, path.join(outputDir, "utils.ts"));
 }
 

@@ -1,4 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import type {
+  User,
+  Repository,
+  Team,
+  Issue,
+  Comment,
+  PullRequest,
+  Commit,
+  ReviewThread,
+} from "../productApi";
 import { type Draft } from "immer";
 import { createListenerMiddleware } from "@reduxjs/toolkit";
 import { type Api } from "@reduxjs/toolkit/query";
@@ -264,6 +274,46 @@ export const entityQueries: Record<string, string[]> = {
 };
 
 export function updateEntity(
+  entityType: "User",
+  id: string | number,
+  updater: (entity: Draft<User>) => void,
+): ReturnType<typeof updateEntityInternal>;
+export function updateEntity(
+  entityType: "Repository",
+  id: string | number,
+  updater: (entity: Draft<Repository>) => void,
+): ReturnType<typeof updateEntityInternal>;
+export function updateEntity(
+  entityType: "Team",
+  id: string | number,
+  updater: (entity: Draft<Team>) => void,
+): ReturnType<typeof updateEntityInternal>;
+export function updateEntity(
+  entityType: "Issue",
+  id: string | number,
+  updater: (entity: Draft<Issue>) => void,
+): ReturnType<typeof updateEntityInternal>;
+export function updateEntity(
+  entityType: "Comment",
+  id: string | number,
+  updater: (entity: Draft<Comment>) => void,
+): ReturnType<typeof updateEntityInternal>;
+export function updateEntity(
+  entityType: "PullRequest",
+  id: string | number,
+  updater: (entity: Draft<PullRequest>) => void,
+): ReturnType<typeof updateEntityInternal>;
+export function updateEntity(
+  entityType: "Commit",
+  id: string | number,
+  updater: (entity: Draft<Commit>) => void,
+): ReturnType<typeof updateEntityInternal>;
+export function updateEntity(
+  entityType: "ReviewThread",
+  id: string | number,
+  updater: (entity: Draft<ReviewThread>) => void,
+): ReturnType<typeof updateEntityInternal>;
+export function updateEntity(
   entityType: string,
   id: string | number,
   updater: (entity: Draft<any>) => void,
@@ -279,6 +329,38 @@ export function updateEntity(
   );
 }
 
+export function deleteEntity(
+  entityType: "User",
+  id: string | number,
+): ReturnType<typeof deleteEntityInternal>;
+export function deleteEntity(
+  entityType: "Repository",
+  id: string | number,
+): ReturnType<typeof deleteEntityInternal>;
+export function deleteEntity(
+  entityType: "Team",
+  id: string | number,
+): ReturnType<typeof deleteEntityInternal>;
+export function deleteEntity(
+  entityType: "Issue",
+  id: string | number,
+): ReturnType<typeof deleteEntityInternal>;
+export function deleteEntity(
+  entityType: "Comment",
+  id: string | number,
+): ReturnType<typeof deleteEntityInternal>;
+export function deleteEntity(
+  entityType: "PullRequest",
+  id: string | number,
+): ReturnType<typeof deleteEntityInternal>;
+export function deleteEntity(
+  entityType: "Commit",
+  id: string | number,
+): ReturnType<typeof deleteEntityInternal>;
+export function deleteEntity(
+  entityType: "ReviewThread",
+  id: string | number,
+): ReturnType<typeof deleteEntityInternal>;
 export function deleteEntity(entityType: string, id: string | number) {
   return deleteEntityInternal(
     entityType,
