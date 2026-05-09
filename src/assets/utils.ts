@@ -98,11 +98,12 @@ export function wrapApiReducer<T extends AnyReducer>(baseReducer: T): T {
       case "api/queries/entitiesUpdated": {
         const { keyPaths, updatedEntity } = action.payload as {
           keyPaths: (string | number)[][];
-          updatedEntity: unknown;
+          updatedEntity: unknown[];
         };
         return produce(nextState, (draft: any) => {
-          for (const keyPath of keyPaths) {
-            set(draft.queries, keyPath, updatedEntity);
+          for (let i = 0; i < keyPaths.length; i++){
+            const keyPath = keyPaths[i];
+            set(draft.queries, keyPath, updatedEntity[i]);
           }
         });
       }
@@ -311,7 +312,7 @@ export function updateEntityInternal(
       entityQueries,
     );
     if (keyPaths.length > 0) {
-      const updatedEntity = produce(get(queriesState, keyPaths[0]), updater);
+      const updatedEntity = keyPaths.map(k => produce(get(queriesState, k), updater));
       dispatch({
         type: "api/queries/entitiesUpdated",
         payload: { keyPaths, updatedEntity },
