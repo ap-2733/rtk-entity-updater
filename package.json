@@ -1,6 +1,6 @@
 {
   "name": "rtk-entity-updater",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "type": "module",
   "main": "./dist/entity-updater.cjs.js",
   "module": "./dist/entity-updater.es.js",
