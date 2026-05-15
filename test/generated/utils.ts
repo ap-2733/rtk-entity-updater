@@ -48,6 +48,56 @@ function set<T>(root: T, path: (string | number)[], value: unknown): T {
   return root;
 }
 
+function isPlainObject(val: unknown): val is Record<string, unknown> {
+  return val !== null && typeof val === "object" && !Array.isArray(val);
+}
+
+export function deepMerge<T extends Record<string, unknown>>(
+  target: T,
+  ...sources: Partial<T>[]
+): T {
+  for (const source of sources) {
+    if (source == null) continue;
+    for (const key of Object.keys(source) as (keyof T)[]) {
+      const sourceVal = source[key];
+      const targetVal = target[key];
+      if (isPlainObject(sourceVal) && isPlainObject(targetVal)) {
+        deepMerge(targetVal, sourceVal as Partial<typeof targetVal>);
+      } else {
+        target[key] = sourceVal as T[keyof T];
+      }
+    }
+  }
+  return target;
+}
+
+export function collectStringPaths(
+  input: string | Record<string, unknown>,
+): Record<string, (string | number)[]> {
+  if (typeof input === "string") {
+    return { [input]: [] };
+  }
+  const result: Record<string, (string | number)[]> = {};
+  const stack: { data: unknown; path: (string | number)[] }[] = [
+    { data: input, path: [] },
+  ];
+  while (stack.length > 0) {
+    const { data, path } = stack.pop()!;
+    if (typeof data === "string") {
+      result[data] = path;
+    } else if (Array.isArray(data)) {
+      for (let i = data.length - 1; i >= 0; i--) {
+        stack.push({ data: data[i], path: [...path, i] });
+      }
+    } else if (data !== null && typeof data === "object") {
+      for (const [key, val] of Object.entries(data)) {
+        stack.push({ data: val, path: [...path, key] });
+      }
+    }
+  }
+  return result;
+}
+
 type IdleGenerator<T> = Generator<void, T, number>;
 
 interface PromisifyGeneratorOptions {
@@ -98,11 +148,12 @@ export function wrapApiReducer<T extends AnyReducer>(baseReducer: T): T {
       case "api/queries/entitiesUpdated": {
         const { keyPaths, updatedEntity } = action.payload as {
           keyPaths: (string | number)[][];
-          updatedEntity: unknown;
+          updatedEntity: unknown[];
         };
         return produce(nextState, (draft: any) => {
-          for (const keyPath of keyPaths) {
-            set(draft.queries, keyPath, updatedEntity);
+          for (let i = 0; i < keyPaths.length; i++){
+            const keyPath = keyPaths[i];
+            set(draft.queries, keyPath, updatedEntity[i]);
           }
         });
       }
@@ -311,7 +362,7 @@ export function updateEntityInternal(
       entityQueries,
     );
     if (keyPaths.length > 0) {
-      const updatedEntity = produce(get(queriesState, keyPaths[0]), updater);
+      const updatedEntity = keyPaths.map(k => produce(get(queriesState, k), updater));
       dispatch({
         type: "api/queries/entitiesUpdated",
         payload: { keyPaths, updatedEntity },
@@ -329,28 +380,32 @@ export function setupMutationListenersInternal(
   queryMap: any,
   entityQueries: Record<string, string[]>,
 ) {
-  for (const [mutationName, entityType] of Object.entries(mutationsMap)) {
+  for (const [mutationName, entityTypeOrMap] of Object.entries(mutationsMap)) {
     const endpoint = api.endpoints[mutationName];
     listenerMiddleware.startListening({
       matcher: endpoint.matchFulfilled,
       effect: async (action, listenerApi) => {
         const dispatch = listenerApi.dispatch as any;
-        const data = (action as any).payload;
-        const idField = entityIdFields[entityType];
-        const id = data[idField];
-        await dispatch(
-          updateEntityInternal(
-            entityType,
-            id,
-            (entity: any) => {
-              Object.assign(entity, data);
-            },
-            reducerPath,
-            entityIdFields,
-            queryMap,
-            entityQueries,
-          ),
-        );
+        const typePaths = collectStringPaths(entityTypeOrMap);
+        for (const [entityType, dataKeypath] of Object.entries(typePaths)) {
+          const data = get((action as any).payload, dataKeypath) as any;
+          const idField = entityIdFields[entityType];
+          const id = data[idField];
+          await dispatch(
+              updateEntityInternal(
+                  entityType,
+                  id,
+                  (entity: any) => {
+                    deepMerge(entity, data);
+                  },
+                  reducerPath,
+                  entityIdFields,
+                  queryMap,
+                  entityQueries,
+              ),
+          );
+        }
+
       },
     });
   }

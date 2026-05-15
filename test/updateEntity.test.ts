@@ -132,7 +132,7 @@ describe("updateEntity", () => {
       })(dispatch, getState);
 
       const { updatedEntity } = dispatch.mock.calls[0][0].payload;
-      expect(updatedEntity.username).toBe("updated");
+      expect(updatedEntity[0].username).toBe("updated");
     });
 
     it("updatedEntity preserves unchanged fields", async () => {
@@ -145,7 +145,7 @@ describe("updateEntity", () => {
       })(dispatch, getState);
 
       const { updatedEntity } = dispatch.mock.calls[0][0].payload;
-      expect(updatedEntity.email).toBe(user1.email);
+      expect(updatedEntity[0].email).toBe(user1.email);
     });
   });
 
@@ -174,8 +174,8 @@ describe("updateEntity", () => {
       })(dispatch, getState);
 
       const { updatedEntity } = dispatch.mock.calls[0][0].payload;
-      expect(updatedEntity.username).toBe("newname");
-      expect(updatedEntity.email).toBe("new@example.com");
+      expect(updatedEntity[0].username).toBe("newname");
+      expect(updatedEntity[0].email).toBe("new@example.com");
     });
 
     it("does not affect unrelated entities in the same array", async () => {
@@ -189,8 +189,8 @@ describe("updateEntity", () => {
 
       // updatedEntity only reflects user1, not user3
       const { updatedEntity } = dispatch.mock.calls[0][0].payload;
-      expect(updatedEntity._id).toBe(user1._id);
-      expect(updatedEntity.username).not.toBe(user3.username);
+      expect(updatedEntity[0]._id).toBe(user1._id);
+      expect(updatedEntity[0].username).not.toBe(user3.username);
     });
   });
 });
